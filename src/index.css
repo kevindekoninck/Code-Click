@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+body {
+  scroll-behavior: smooth;
+}
+
+:root {
+  background-color: #000;
+}
+
+.rubik {
+  font-family: "Rubik Distressed", system-ui;
+  font-weight: 200;
+  font-style: normal;
+}
+.textess {
+  /* 1. La police doit être appliquée */
+  font-family: "Rubik Distressed", sans-serif;
+  font-size: 60px; /* Ajustez la taille */
+
+  /* 2. Couleur du texte (pour le "remplissage") */
+  color: white; /* La couleur de remplissage (le blanc dans votre image) */
+
+  /* 3. Simulation du contour noir épais */
+  text-shadow: -2px -2px 0 #000, /* Haut-Gauche */ 2px -2px 0 #000,
+    /* Haut-Droite */ -2px 2px 0 #000, /* Bas-Gauche */ 2px 2px 0 #000,
+    /* Bas-Droite */ -3px 0px 0 #000, /* Gauche */ 3px 0px 0 #000,
+    /* Droite */ 0px -3px 0 #000, /* Haut */ 0px 3px 0 #000; /* Bas */
+}
