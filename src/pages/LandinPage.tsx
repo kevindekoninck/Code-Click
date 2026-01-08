@@ -1,45 +1,11 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import PrincipalePage from "./PrincipalePage";
 
 function LandingPage() {
-  const [login, setLogin] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [isVisible, setIsVisible] = useState(true);
   const navigate = useNavigate();
-  const [showLogin, setShowLogin] = useState(true); // true = login, false = register
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    try {
-      const res = await fetch("http://localhost:3000/users/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          login,
-          password,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Identifiants incorrects");
-        return;
-      }
-
-      // Sauvegarde du token
-      localStorage.setItem("token", data.token);
-
-      // Redirection
-      navigate(`/principale/${data.etna_id}`);
-    } catch (err) {
-      setError("Erreur serveur");
-    }
+  // Fonction pour aller à la page de login
+  const handleStartGame = () => {
+    navigate("/login");
   };
 
   return (
@@ -63,13 +29,12 @@ function LandingPage() {
               </div>
               <div className="flex gap-17 justify-center">
                 <div>
-                  <button className="border-2  p-1.5 rounded-lg cursor-pointer hover:border-red-950">
-                    <a
-                      href="#form"
-                      className="text-2xl hover:text-amber-100 hover:animate-pulse"
-                    >
+                  {/* MODIFICATION ICI : Navigation vers /login */}
+                  <button 
+                    onClick={handleStartGame}
+                    className="border-2 p-1.5 rounded-lg cursor-pointer hover:border-red-950 text-2xl hover:text-amber-100 hover:animate-pulse"
+                  >
                       Start Eruption
-                    </a>
                   </button>
                 </div>
                 <div>
@@ -239,83 +204,6 @@ function LandingPage() {
               </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      <section className="flex justify-center mb-64" id="form">
-        <div className="relative w-[50%] flex justify-between ">
-          <img
-            src="/yagan.png"
-            alt="personnage"
-            className="absolute -top-[148px] left-[400px] -translate-x-1/2 w-40 z-20"
-          />
-
-          <form
-            onSubmit={handleSubmit}
-            className="border-b-2 border-l-2 border-t-2 bg-[#ffffff40] rounded-l-2xl w-[50%]"
-          >
-            <div className="flex justify-center text-2xl mt-6">
-              <h1>Connexion</h1>
-            </div>
-
-            <div className="p-3 mt-8">
-              <h1>
-                Renseignez vos identifiants <br /> ETNA
-              </h1>
-            </div>
-
-            <div className="flex justify-center">
-              <div className="flex flex-col justify-center w-[60%] gap-5">
-                <input
-                  type="text"
-                  className="border-2 p-2 rounded-lg"
-                  placeholder="Login"
-                  value={login}
-                  onChange={(e) => setLogin(e.target.value)}
-                  required
-                />
-
-                <input
-                  type="password"
-                  className="border-2 p-2 rounded-lg"
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-
-            {error && <p className="text-red-500 text-center mt-4">{error}</p>}
-
-            <div className="flex justify-center w-[100%] gap-28 mt-12 mb-20">
-              <div className="flex gap-14">
-                <button
-                  type="submit"
-                  className="border-2 p-2 rounded-lg hover:bg-white hover:text-black transition"
-                >
-                  Émarger vous
-                </button>
-              </div>
-            </div>
-          </form>
-
-          {/* PARTIE DROITE */}
-          <section
-            className="w-[50%] flex bg-gradient-to-br from-[#653535] to-[#040404]"
-            id="droite"
-          >
-            <div className="border-amber-50 flex-col rounded-r-2xl border-t-2 border-b-2 border-r-2 w-full flex justify-center text-center">
-              <p className="mt-5">
-                Prêt à débloquer toutes les fonctionnalités et à sauvegarder
-                votre progression ? Connectez-vous en quelques secondes pour
-                démarrer l'aventure !
-              </p>
-              <div className="flex justify-center">
-                <img src="/p2.png" alt="" />
-              </div>
-            </div>
-          </section>
         </div>
       </section>
     </div>

@@ -2,6 +2,8 @@ import { Routes, Route } from "react-router-dom";
 import Home from "./pages/LandinPage";
 import Header from "./components/Header";
 import PrincipalePage from "./pages/PrincipalePage";
+import LoginPage from "./pages/LoginPage";
+
 
 function App() {
   return (
@@ -10,6 +12,7 @@ function App() {
 
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/principale/:etna_id" element={<PrincipalePage />} />
         <Route path="*" element={<h1>404</h1>} />
       </Routes>
