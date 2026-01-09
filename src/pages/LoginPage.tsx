@@ -2,14 +2,13 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 function LoginPage() {
-  // État pour savoir si on est en mode "Connexion" (true) ou "Inscription" (false)
   const [isLoginMode, setIsLoginMode] = useState(true);
   
-  // États du formulaire unifié
   const [formData, setFormData] = useState({
+    email: "",
     login: "",
     password: "",
-    confirmPassword: "" // Utilisé uniquement pour l'inscription
+    confirmPassword: ""
   });
   
   const [error, setError] = useState<string | null>(null);
@@ -17,12 +16,8 @@ function LoginPage() {
   
   const navigate = useNavigate();
 
-  // Gestion générique des champs
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,52 +25,44 @@ function LoginPage() {
     setError(null);
     setIsLoading(true);
 
-    // 1. Validation basique (Inscription uniquement)
-    if (!isLoginMode && formData.password !== formData.confirmPassword) {
-      setError("Les mots de passe ne correspondent pas !");
-      setIsLoading(false);
-      return;
+    if (!isLoginMode) {
+        if (formData.password !== formData.confirmPassword) {
+            setError("Les mots de passe ne correspondent pas !");
+            setIsLoading(false);
+            return;
+        }
+        if (!formData.email.includes("@") || !formData.email.includes(".")) {
+            setError("L'email n'est pas valide !");
+            setIsLoading(false);
+            return;
+        }
     }
 
-    // 2. Choix de l'URL selon le mode
-    // Vérifie bien ces routes avec ton back-end (ex: /login vs /register)
     const endpoint = isLoginMode ? "/users/login" : "/users/register";
     const url = `http://localhost:3000${endpoint}`;
 
     try {
+      const bodyPayload = isLoginMode 
+        ? { login: formData.login, password: formData.password }
+        : { email: formData.email, login: formData.login, password: formData.password };
+
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          login: formData.login,
-          password: formData.password,
-          // Ajoute d'autres champs si besoin pour l'inscription (team, etc.)
-        }),
+        body: JSON.stringify(bodyPayload),
       });
 
       const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.error || "Une erreur est survenue");
-      }
+      if (!res.ok) throw new Error(data.error || "Une erreur volcanique est survenue 🔥");
 
-      // 3. Scénarios de succès
-      if (isLoginMode) {
-        // Cas Connexion : On stocke et on redirige
-        localStorage.setItem("token", data.token);
-        navigate(`/principale/${data.etna_id}`);
-      } else {
-        // Cas Inscription réussie :
-        // Option A : On connecte directement l'utilisateur (si le back renvoie un token)
-        if (data.token) {
+      if (data.token) {
            localStorage.setItem("token", data.token);
            navigate(`/principale/${data.etna_id}`);
-        } else {
-           // Option B : On le force à se connecter
-           alert("Compte créé avec succès ! Connectez-vous.");
+      } else if (!isLoginMode) {
+           alert("Compte créé ! Connectez-vous.");
            setIsLoginMode(true);
            setFormData({ ...formData, password: "", confirmPassword: "" });
-        }
       }
 
     } catch (err: any) {
@@ -86,53 +73,58 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col justify-center items-center rubik bg-[#050505] relative overflow-hidden text-white p-4">
+    <div className="min-h-screen w-full flex flex-col justify-center items-center bg-[#020202] relative overflow-hidden text-white p-4 font-sans selection:bg-orange-500 selection:text-white">
       
-      {/* --- FOND DÉCORATIF (Amélioration des couleurs) --- */}
-      {/* Un cercle rougeoyant en haut à gauche */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-red-900/40 blur-[120px] rounded-full pointer-events-none"></div>
-      {/* Un cercle orangé en bas à droite */}
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-orange-900/30 blur-[100px] rounded-full pointer-events-none"></div>
+      {/* --- FOND GLOBAL --- */}
+      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-red-900/20 blur-[120px] rounded-full pointer-events-none animate-pulse"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-orange-900/10 blur-[100px] rounded-full pointer-events-none"></div>
       
       {/* Bouton Retour */}
       <button 
         onClick={() => navigate('/')} 
-        className="self-start mb-6 md:absolute md:top-8 md:left-8 md:mb-0 flex items-center gap-2 text-gray-400 hover:text-amber-400 transition-colors z-30 font-bold"
+        className="self-start mb-6 md:absolute md:top-8 md:left-8 md:mb-0 flex items-center gap-2 text-gray-500 hover:text-amber-500 transition-colors z-30 font-bold uppercase text-xs tracking-[0.2em]"
       >
         <span>←</span> Retour accueil
       </button>
 
       {/* --- CARTE PRINCIPALE --- */}
-      <div className="relative w-full max-w-4xl flex flex-col md:flex-row shadow-2xl shadow-black/50 rounded-3xl mt-12 md:mt-0 z-10 animate-fade-in-up">
+      <div className="relative w-full max-w-5xl flex flex-col md:flex-row shadow-2xl shadow-black/90 rounded-3xl mt-8 md:mt-0 z-10 border border-white/10 bg-[#080808] overflow-hidden">
         
-        {/* === PARTIE GAUCHE (Formulaire Dynamique) === */}
-        <div className="relative w-full md:w-1/2 bg-zinc-900/80 backdrop-blur-xl border border-white/10 rounded-t-3xl md:rounded-l-3xl md:rounded-tr-none p-8 flex flex-col justify-center">
-            
-            {/* Yagan (Mascotte) - Positionné à cheval sur le bord haut */}
-            <img
-                src="/yagan.png"
-                alt="Yagan"
-                className="absolute left-1/2 transform -translate-x-1/2 -top-28 w-40 drop-shadow-2xl z-20 pointer-events-none hover:scale-110 transition duration-500"
-            />
+        {/* === PARTIE GAUCHE (Formulaire - Inchangée) === */}
+        <div className="relative w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-gradient-to-br from-[#0a0a0a] to-[#050505]">
+            {/* ... (Tout le contenu de gauche reste identique) ... */}
 
-            <div className="mt-12 mb-6 text-center">
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-amber-200 to-orange-500 bg-clip-text text-transparent">
-                  {isLoginMode ? "Connexion" : "Rejoindre l'ETNA"}
+            <div className="mt-12 md:mt-16 mb-8 text-center md:text-left">
+                <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-amber-200 via-orange-400 to-red-500 bg-clip-text text-transparent rubik tracking-wide">
+                  {isLoginMode ? "CONNEXION" : "REJOINDRE"}
                 </h1>
-                <p className="text-gray-400 text-sm mt-2">
-                  {isLoginMode ? "Bon retour parmi nous, légende." : "Créez votre légende volcanique."}
+                <p className="text-gray-400 text-sm mt-3 font-medium tracking-wide">
+                  {isLoginMode ? "Prêt à faire entrer le volcan en éruption ?" : "Crée ta légende et domine le classement."}
                 </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4 px-2 md:px-6 transition-all duration-300">
-                
-                {/* Champ Login */}
+            <form onSubmit={handleSubmit} className="flex flex-col gap-5 transition-all duration-300">
+                {/* Champ EMAIL */}
+                <div className={`flex flex-col gap-1 transition-all duration-500 ease-in-out overflow-hidden ${isLoginMode ? 'max-h-0 opacity-0' : 'max-h-24 opacity-100'}`}>
+                    <label className="text-[10px] font-bold text-amber-500/80 uppercase tracking-[0.15em] ml-1">Email académique</label>
+                    <input
+                        type="email"
+                        name="email"
+                        className="bg-black/50 border border-white/10 p-3 rounded-lg text-white placeholder-gray-700 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 focus:outline-none transition-all w-full text-sm font-medium"
+                        placeholder="nom@etna-alternance.net"
+                        value={formData.email}
+                        onChange={handleChange}
+                        required={!isLoginMode}
+                    />
+                </div>
+
+                {/* Champ LOGIN */}
                 <div className="flex flex-col gap-1">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Login</label>
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] ml-1">Login (Pseudo)</label>
                     <input
                         type="text"
                         name="login"
-                        className="bg-black/40 border border-white/10 p-3 rounded-xl text-white placeholder-gray-600 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none transition-all"
+                        className="bg-black/50 border border-white/10 p-3 rounded-lg text-white placeholder-gray-700 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 focus:outline-none transition-all text-sm font-medium"
                         placeholder="Ex: dekon_k"
                         value={formData.login}
                         onChange={handleChange}
@@ -140,13 +132,13 @@ function LoginPage() {
                     />
                 </div>
 
-                {/* Champ Password */}
+                {/* Champ PASSWORD */}
                 <div className="flex flex-col gap-1">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Mot de passe</label>
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] ml-1">Mot de passe</label>
                     <input
                         type="password"
                         name="password"
-                        className="bg-black/40 border border-white/10 p-3 rounded-xl text-white placeholder-gray-600 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none transition-all"
+                        className="bg-black/50 border border-white/10 p-3 rounded-lg text-white placeholder-gray-700 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 focus:outline-none transition-all text-sm font-medium tracking-widest"
                         placeholder="••••••••"
                         value={formData.password}
                         onChange={handleChange}
@@ -154,24 +146,22 @@ function LoginPage() {
                     />
                 </div>
 
-                {/* Champ Confirm Password (Visible uniquement en mode Inscription) */}
-                {!isLoginMode && (
-                  <div className="flex flex-col gap-1 animate-fade-in">
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Confirmation</label>
-                      <input
-                          type="password"
-                          name="confirmPassword"
-                          className="bg-black/40 border border-white/10 p-3 rounded-xl text-white placeholder-gray-600 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none transition-all"
-                          placeholder="••••••••"
-                          value={formData.confirmPassword}
-                          onChange={handleChange}
-                          required
-                      />
-                  </div>
-                )}
+                {/* Champ CONFIRM PASSWORD */}
+                <div className={`flex flex-col gap-1 transition-all duration-500 ease-in-out overflow-hidden ${isLoginMode ? 'max-h-0 opacity-0' : 'max-h-24 opacity-100'}`}>
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] ml-1">Confirmation</label>
+                    <input
+                        type="password"
+                        name="confirmPassword"
+                        className="bg-black/50 border border-white/10 p-3 rounded-lg text-white placeholder-gray-700 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 focus:outline-none transition-all text-sm font-medium tracking-widest"
+                        placeholder="••••••••"
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        required={!isLoginMode}
+                    />
+                </div>
 
                 {error && (
-                    <div className="bg-red-500/10 border border-red-500/50 text-red-200 text-sm text-center p-3 rounded-lg mt-2 flex items-center justify-center gap-2">
+                    <div className="bg-red-500/10 border border-red-500/40 text-red-300 text-xs font-bold uppercase tracking-wider text-center p-3 rounded-lg flex items-center justify-center gap-2 animate-pulse">
                         ⚠️ {error}
                     </div>
                 )}
@@ -179,52 +169,76 @@ function LoginPage() {
                 <button
                     type="submit"
                     disabled={isLoading}
-                    className="mt-4 w-full bg-gradient-to-r from-orange-700 to-red-700 hover:from-orange-600 hover:to-red-600 border border-orange-500/30 text-white font-bold py-3.5 px-4 rounded-xl transition-all transform active:scale-95 shadow-lg shadow-orange-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="mt-4 w-full bg-gradient-to-r from-orange-600 to-red-700 hover:from-orange-500 hover:to-red-600 border-t border-white/20 text-white font-bold py-4 px-4 rounded-lg transition-all transform hover:-translate-y-1 active:scale-95 shadow-[0_4px_20px_rgba(234,88,12,0.3)] hover:shadow-[0_8px_30px_rgba(234,88,12,0.5)] disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest text-xs"
                 >
-                    {isLoading ? "Chargement..." : (isLoginMode ? "S'émarger" : "Créer mon volcan 🌋")}
+                    {isLoading ? "Chargement..." : (isLoginMode ? "S'émarger au volcan" : "Créer mon compte")}
                 </button>
             </form>
             
-             <div className="text-center mt-6 pb-2">
-                <p className="text-sm text-gray-400">
-                    {isLoginMode ? "Pas encore de compte ?" : "Déjà un compte ?"}
+             <div className="text-center mt-6">
+                <p className="text-xs text-gray-500 font-medium tracking-wide">
+                    {isLoginMode ? "Pas encore de compte ?" : "Déjà membre ?"}
                     <button 
                       type="button"
                       onClick={() => {
                         setIsLoginMode(!isLoginMode);
-                        setError(null); // Reset erreur au changement
+                        setError(null);
                       }} 
-                      className="ml-2 text-amber-400 hover:text-amber-300 font-bold underline decoration-amber-500/30 hover:decoration-amber-300 transition-all"
+                      className="ml-2 text-amber-500 hover:text-amber-400 font-bold hover:underline transition-all uppercase tracking-wider"
                     >
-                        {isLoginMode ? "Inscrivez-vous" : "Connectez-vous"}
+                        {isLoginMode ? "Rejoins l'aventure" : "Connecte-toi"}
                     </button>
                 </p>
             </div>
         </div>
 
-        {/* === PARTIE DROITE (Visuel / Marketing) === */}
-        <div className="w-full md:w-1/2 bg-gradient-to-br from-[#1a0505] to-black rounded-b-3xl md:rounded-r-3xl md:rounded-bl-none border-t border-b border-r border-white/10 p-10 flex flex-col justify-center items-center text-center relative overflow-hidden group">
+        {/* === NOUVELLE PARTIE DROITE (Redesign) === */}
+        <div className="hidden md:flex w-1/2 relative overflow-hidden bg-[#030303] items-center justify-center group">
             
-            {/* Effet de brillance au survol */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
+            {/* 1. Fond Abstrait "Tech Magma" */}
+            <div className="absolute inset-0 opacity-20">
+                {/* Grille futuriste */}
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
+                {/* Lueur rougeoyante style "circuit" */}
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(234,88,12,0.2)_0%,transparent_70%)] mix-blend-screen animate-pulse duration-[4000ms]"></div>
+            </div>
 
-            <div className="relative z-10 flex flex-col items-center h-full justify-center">
-                <h2 className="text-2xl font-bold text-white mb-6">
-                  {isLoginMode ? "Prêt à cliquer ?" : "Rejoignez l'élite"}
+             {/* 2. Lumières Volumétriques */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-red-600/30 blur-[100px] rounded-full pointer-events-none mix-blend-screen"></div>
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-orange-500/20 blur-[100px] rounded-full pointer-events-none mix-blend-screen"></div>
+
+            {/* 3. Contenu Principal */}
+            <div className="relative z-10 flex flex-col items-center justify-center h-full w-full p-10 text-center">
+                
+                {/* Effet de "scan" au survol */}
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-amber-500/5 to-transparent translate-y-[-100%] group-hover:translate-y-[100%] transition-transform duration-[2000ms] ease-in-out pointer-events-none"></div>
+
+                {/* Personnage avec effet de survol */}
+                <div className="relative transition-all duration-700 transform group-hover:scale-105 group-hover:-translate-y-2">
+                  {/* Ombre portée colorée derrière le perso */}
+                  <div className={`absolute inset-0 blur-2xl opacity-40 -z-10 ${isLoginMode ? 'bg-orange-500' : 'bg-red-600'} transition-colors duration-700`}></div>
+                  <img 
+                    src={isLoginMode ? "/p2.png" : "/harris.png"} 
+                    alt="Illustration" 
+                    className={`mb-8 drop-shadow-[0_10px_30px_rgba(0,0,0,0.8)] transition-all duration-700 ${isLoginMode ? 'scale-100 rotate-0' : 'scale-110 -rotate-3'}`}
+                    style={{ maxHeight: "320px" }}
+                  />
+                </div>
+
+                <h2 className="text-3xl font-bold text-white mb-4 rubik shadow-black drop-shadow-lg tracking-wider">
+                  {isLoginMode ? "Welcome Back" : "Deviens une Légende"}
                 </h2>
                 
-                <p className="text-gray-300 leading-relaxed mb-8 max-w-xs">
-                    {isLoginMode 
-                      ? "Sauvegardez votre progression, grimpez dans le classement et dominez le campus ETNA." 
-                      : "Créez votre compte maintenant pour commencer l'aventure Code & Click. La gloire vous attend."}
-                </p>
-                
-                {/* Image dynamique selon le mode */}
-                <img 
-                  src={isLoginMode ? "/p2.png" : "/harris.png"} 
-                  alt="Illustration" 
-                  className="max-h-[220px] object-contain drop-shadow-[0_10px_20px_rgba(255,100,0,0.2)] transition-all duration-500 key={isLoginMode}" 
-                />
+                {/* Boite de texte style "HUD" */}
+                <div className="relative max-w-sm p-5 rounded-xl border border-white/10 bg-black/40 backdrop-blur-md overflow-hidden">
+                    {/* Petite barre lumineuse en haut de la boite */}
+                    <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-orange-500 to-transparent opacity-50"></div>
+                    <p className="text-gray-200 text-sm leading-relaxed font-medium tracking-wide">
+                        {isLoginMode 
+                        ? "Tes LavaCoins n'attendent que toi. Reprends le contrôle de ta production et écrase la concurrence." 
+                        : "Rejoins l'élite de l'ETNA. Construis ton empire, débloque des bonus exclusifs et impose ton style."}
+                    </p>
+                </div>
             </div>
         </div>
 
