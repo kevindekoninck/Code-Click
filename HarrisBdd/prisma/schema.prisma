@@ -1,0 +1,215 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  Userid              Int           @id
+  lava_coins          Int
+  login               String        @unique
+  password            String
+  email               String
+  current_clicks      Int           @default(1)
+  team_name           String
+  fairplay_points     Int
+  battery_level       Float
+  CreatedAt           DateTime      
+
+  // Relations
+  user_powers         UserPowerUp[]
+  user_inventory      UserConsumable[]
+  user_scores         UserScore[]
+  user_achievements   UserAchievement[]
+  user_quizzes        UserQuizResult[]
+//  user_story_progress UserStoryProgress[]
+}
+
+
+model PowerUp {
+  id                    Int           @id @default(autoincrement())
+  name                  String
+  category              String 
+  base_price            BigInt
+  base_cps_multiplier   Float 
+  base_cps_diviser      Float 
+  description           String
+  rarity                String
+  pu_pictures           String
+
+  user_powers           UserPowerUp[]
+}
+
+model UserPowerUp {
+  user_id                     Int
+  power_up_id                 Int
+  
+  level                       Int           @default(1)
+  next_price                  BigInt 
+  current_cps_multiplier      Float
+  current_cps_diviser         Float
+  
+  // Relations
+  user                        User          @relation(fields: [user_id], references: [etna_id])
+  power_up                    PowerUp       @relation(fields: [power_up_id], references: [id])
+  
+  // Clé primaire composée (un seul enregistrement de niveau par utilisateur/compétence)
+  @@id([user_id, power_up_id])
+}
+
+
+model Consumable {
+  id                      Int           @id @default(autoincrement())
+  name                    String
+  description             String
+  cost                    BigInt
+  effect_duration_s       Int 
+  effect_multiplier       Float 
+  
+  user_inventory          UserConsumable[]
+}
+
+model UserConsumable {
+  user_id                 Int
+  consumable_id           Int
+  
+  quantity                Int           @default(0) 
+  
+  // Relations
+  user                    User          @relation(fields: [user_id], references: [etna_id])
+  consumable              Consumable    @relation(fields: [consumable_id], references: [id])
+  
+  // Clé primaire composée
+  @@id([user_id, consumable_id])
+}
+
+
+model Event {
+  id                      Int           @id @default(autoincrement())
+  name                    String
+  type                    String 
+  start_date              DateTime?
+  end_date                DateTime?
+  
+  // Relations (1,1 - 1,1)
+  classement              Classement?
+  user_scores             UserScore[]
+}
+
+model Classement {
+ 
+  event_id                Int           @id
+  status                  String 
+  reward_details          String?
+  
+  // Relations
+  event                   Event         @relation(fields: [event_id], references: [id])
+}
+
+model UserScore {
+  user_id                 Int
+  event_id                Int
+  
+  score                   BigInt        @default(0)
+  last_updated            DateTime      @updatedAt
+  
+  // Relations
+  user                    User          @relation(fields: [user_id], references: [etna_id])
+  event                   Event         @relation(fields: [event_id], references: [id])
+  
+  // Clé primaire composée (un seul score par user/event)
+  @@id([user_id, event_id])
+}
+
+/// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+model Boss {
+  id                      Int           @id @default(autoincrement())
+  name                    String
+  max_hp                  BigInt
+  current_hp              BigInt
+  is_defeated             Boolean       @default(false)
+  damage_reward           BigInt // Récompense de clics/points pour les dégâts
+  
+  // Pourrait être lié à StoryEvent si vous voulez que la défaite déclenche l'histoire
+}
+
+model Achievement {
+  id                      Int           @id @default(autoincrement())
+  name                    String             
+  description             String
+  reward_points           Int
+  
+  user_achievements       UserAchievement[]
+}
+
+model UserAchievement {
+  user_id                 Int
+  achievement_id          Int
+  
+  unlocked_at             DateTime      @default(now())
+  
+  // Relations
+  user                    User          @relation(fields: [user_id], references: [etna_id])
+  achievement             Achievement   @relation(fields: [achievement_id], references: [id])
+  
+  @@id([user_id, achievement_id])
+}
+
+model SkillTreePoint {
+  id                      Int           @id @default(autoincrement())
+  name                    String
+  cost                    BigInt
+  description             String
+  
+  // Si le point est lié à une progression unique par utilisateur
+  // Si c'est un simple inventaire de "points dépensables", il est géré dans le modèle User
+}
+
+
+//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+model Course {
+  id                      Int           @id @default(autoincrement())
+  name                    String
+  description             String
+  prerequisite            String? 
+  
+  quizzes                 Quiz[]
+}
+
+model Quiz {
+  id                      Int           @id @default(autoincrement())
+  course_id               Int
+  title                   String
+  reward_fairplay_points  Int           @default(0)
+  
+  // Relations
+  course                  Course        @relation(fields: [course_id], references: [id])
+  quiz_results            UserQuizResult[]
+}
+
+model UserQuizResult {
+  id                      Int           @id @default(autoincrement())
+  user_id                 Int
+  quiz_id                 Int
+  
+  score                   Float 
+  is_penalized            Boolean       @default(false) 
+  completed_at            DateTime      @default(now())
+  
+  // Relations
+  user                    User          @relation(fields: [user_id], references: [etna_id])
+  quiz                    Quiz          @relation(fields: [quiz_id], references: [id])
+}
