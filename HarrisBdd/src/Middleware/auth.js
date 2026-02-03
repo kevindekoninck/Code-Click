@@ -7,7 +7,7 @@ export const auth = (req, res, next) => {
   }
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET); // on extrait l'id du user via le token
-    req.user = { id: decoded.userId };
+    req.user = { id: decoded.userId, login: decoded.login };
     next();
   } catch (err) {
     console.error("JWT ERROR:", err.message);

@@ -17,12 +17,13 @@ export const validateCreateUser = [
   body("lastname").notEmpty().withMessage("Le nom est obligatoire"),
 ];
 
-// GET /users
+//////////       Recuperation d'un user specifique      ///////////////////
+
 export const getMyUser = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
       where: {
-        id: req.user.id,
+        login: req.user.login,
       },
       include: {
         user_powers: true,
@@ -45,7 +46,7 @@ export const getMyUser = async (req, res) => {
 
 export const getUsers = async (req, res) => {
   try {
-    const users = await prisma.users.findMany();
+    const users = await prisma.user.findMany();
     res.json(users);
   } catch (error) {
     console.error(error);
@@ -119,9 +120,13 @@ export const login = async (req, res) => {
     }
 
     // 3) Générer un token JWT
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
-      expiresIn: process.env.JWT_EXPIRES || "1h",
-    });
+    const token = jwt.sign(
+      { userId: user.id, login: user.login },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: process.env.JWT_EXPIRES || "1h",
+      },
+    );
     // Envoi du token dans un cookie
     res.cookie("token", token, {
       httpOnly: true, // invisible côté JS
@@ -145,7 +150,7 @@ export const login = async (req, res) => {
 /* --- MODIFY --- */
 export const modifyUser = async (req, res) => {
   try {
-    const allowedFields = ["firstname", "lastname"];
+    const allowedFields = ["FirstName", "LastName", "password", "email"];
 
     const data = {};
 

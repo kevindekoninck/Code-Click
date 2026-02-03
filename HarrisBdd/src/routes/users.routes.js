@@ -6,7 +6,7 @@ import { auth } from "../Middleware/auth.js";
 const router = Router();
 
 router.post("/login", login);
-router.get("/:etna_id", getUserByLogin);
+router.get("/:id", getUserByLogin);
 
 // router.get("/:id/company", usersControllers.companyByUser)
 
